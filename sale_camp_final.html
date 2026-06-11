@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>बिक्री शिविर — पशु डेटा फॉर्म</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+  :root {
+    --green-dark: #1A4D3A;
+    --green-mid:  #2D7A5A;
+    --green-light:#4CAF82;
+    --green-pale: #E8F5EE;
+    --amber:      #D4820A;
+    --amber-pale: #FEF3DC;
+    --red:        #C0392B;
+    --red-pale:   #FDECEB;
+    --grey-900:   #1C1C1C;
+    --grey-700:   #444;
+    --grey-500:   #777;
+    --grey-300:   #CCC;
+    --grey-100:   #F5F5F5;
+    --white:      #FFFFFF;
+    --radius:     10px;
+    --shadow:     0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans Devanagari','Inter',sans-serif; background:#F0F4F2; color:var(--grey-900); min-height:100vh; }
+
+  /* ── PS SELECTION OVERLAY ── */
+  #psOverlay {
+    position:fixed; inset:0; background:var(--green-dark);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:1000; padding:32px 24px;
+  }
+  #psOverlay.hidden { display:none; }
+  .ps-logo { font-size:48px; margin-bottom:16px; }
+  .ps-title { color:white; font-size:20px; font-weight:700; margin-bottom:6px; text-align:center; }
+  .ps-subtitle { color:rgba(255,255,255,0.65); font-size:13px; margin-bottom:32px; text-align:center; }
+  .ps-options { width:100%; max-width:340px; display:flex; flex-direction:column; gap:10px; }
+  .ps-option {
+    background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2);
+    border-radius:12px; padding:16px 20px; color:white; font-size:16px;
+    font-family:inherit; font-weight:500; cursor:pointer; text-align:left;
+    transition:all 0.15s; display:flex; align-items:center; gap:12px;
+  }
+  .ps-option:hover { background:rgba(255,255,255,0.2); border-color:var(--green-light); }
+  .ps-option .ps-icon { font-size:22px; }
+
+  /* ── HEADER ── */
+  header {
+    background:var(--green-dark); color:white; padding:12px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100; box-shadow:0 2px 8px rgba(0,0,0,0.2);
+  }
+  .header-left { display:flex; flex-direction:column; }
+  .header-title { font-size:16px; font-weight:700; }
+  .header-ps { font-size:12px; opacity:0.75; margin-top:1px; }
+  .header-right { display:flex; align-items:center; gap:8px; }
+  .header-count { background:var(--green-light); color:white; border-radius:20px; padding:4px 10px; font-size:12px; font-weight:600; }
+  .btn-change-ps { background:rgba(255,255,255,0.15); border:none; color:white; border-radius:8px; padding:5px 10px; font-size:11px; font-family:inherit; cursor:pointer; }
+
+  /* ── TABS ── */
+  .tabs { display:flex; background:var(--white); border-bottom:2px solid var(--grey-100); position:sticky; top:54px; z-index:90; }
+  .tab { flex:1; padding:12px 8px; text-align:center; font-size:13px; font-weight:500; cursor:pointer; color:var(--grey-500); border-bottom:3px solid transparent; transition:all 0.2s; }
+  .tab.active { color:var(--green-dark); border-bottom-color:var(--green-mid); background:var(--green-pale); }
+
+  .page { display:none; padding:14px; max-width:640px; margin:0 auto; }
+  .page.active { display:block; }
+
+  /* ── FORM ── */
+  .card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-bottom:12px; }
+  .card-title { font-size:12px; font-weight:700; color:var(--green-dark); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--grey-100); }
+  .field { margin-bottom:12px; }
+  .field:last-child { margin-bottom:0; }
+  label { display:block; font-size:13px; font-weight:500; color:var(--grey-700); margin-bottom:5px; }
+  label .req { color:var(--red); margin-left:2px; }
+  input[type="text"],input[type="number"],input[type="tel"],select {
+    width:100%; padding:11px 13px; border:1.5px solid var(--grey-300); border-radius:8px;
+    font-size:15px; font-family:inherit; color:var(--grey-900); background:var(--white);
+    transition:border-color 0.15s; appearance:none; -webkit-appearance:none;
+  }
+  input:focus,select:focus { outline:none; border-color:var(--green-mid); box-shadow:0 0 0 3px rgba(45,122,90,0.12); }
+  select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23777' d='M6 8L0 0h12z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .toggle-group { display:flex; gap:8px; }
+  .toggle-btn { flex:1; padding:11px; border:1.5px solid var(--grey-300); border-radius:8px; background:var(--white); font-size:15px; font-family:inherit; cursor:pointer; text-align:center; transition:all 0.15s; color:var(--grey-700); }
+  .toggle-btn.sel-male { border-color:var(--green-mid); background:var(--green-pale); color:var(--green-dark); font-weight:600; }
+  .toggle-btn.sel-female { border-color:#9C4A8A; background:#F9EFF7; color:#6B2D63; font-weight:600; }
+
+  .result-card { background:var(--green-pale); border:1.5px solid var(--green-light); border-radius:var(--radius); padding:16px; margin-bottom:12px; display:none; }
+  .result-card.show { display:block; }
+  .result-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .result-row:last-child { margin-bottom:0; }
+  .result-label { font-size:13px; color:var(--grey-500); }
+  .result-value { font-size:15px; font-weight:700; color:var(--green-dark); }
+  .result-value.big { font-size:22px; }
+  .result-divider { border:none; border-top:1px dashed var(--green-light); margin:8px 0; }
+
+  .warning-msg { background:var(--red-pale); border:1.5px solid var(--red); border-radius:8px; padding:12px 14px; font-size:13px; color:var(--red); margin-bottom:12px; display:none; }
+  .warning-msg.show { display:block; }
+
+  .btn-submit { width:100%; padding:15px; background:var(--green-dark); color:white; border:none; border-radius:var(--radius); font-size:16px; font-family:inherit; font-weight:600; cursor:pointer; transition:background 0.2s; }
+  .btn-submit:hover { background:var(--green-mid); }
+  .btn-submit:disabled { background:var(--grey-300); cursor:not-allowed; }
+  .btn-reset { width:100%; padding:11px; background:var(--white); color:var(--grey-700); border:1.5px solid var(--grey-300); border-radius:var(--radius); font-size:14px; font-family:inherit; cursor:pointer; margin-top:8px; }
+
+  .success-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--green-dark); color:white; padding:12px 24px; border-radius:24px; font-size:14px; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,0.2); transition:transform 0.3s; z-index:999; white-space:nowrap; }
+  .success-toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* ── RECORDS ── */
+  .table-wrap { overflow-x:auto; border-radius:var(--radius); box-shadow:var(--shadow); background:white; }
+  table { width:100%; border-collapse:collapse; font-size:12px; min-width:560px; }
+  th { background:var(--green-dark); color:white; padding:9px 10px; text-align:left; font-weight:600; font-size:11px; white-space:nowrap; }
+  td { padding:8px 10px; border-bottom:1px solid var(--grey-100); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:nth-child(even) td { background:#FAFAFA; }
+  .badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:600; }
+  .badge-male { background:var(--green-pale); color:var(--green-dark); }
+  .badge-female { background:#F9EFF7; color:#6B2D63; }
+  .price-cell { font-weight:700; color:var(--green-dark); }
+  .empty-state { text-align:center; padding:40px 20px; color:var(--grey-500); font-size:14px; }
+  .table-summary { background:var(--green-pale); border-radius:var(--radius); padding:12px 16px; margin-top:12px; display:flex; gap:20px; flex-wrap:wrap; }
+  .summary-item { font-size:12px; }
+  .summary-item strong { font-size:15px; color:var(--green-dark); display:block; }
+  .btn-export { background:var(--white); border:1.5px solid var(--green-mid); color:var(--green-dark); border-radius:8px; padding:10px 16px; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; margin-top:10px; }
+
+  /* ── SETTINGS ── */
+  .settings-label { font-size:11px; font-weight:700; color:var(--grey-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; }
+  .rate-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+  .rate-grid input { text-align:center; font-weight:600; font-size:14px; }
+  .rate-col-headers { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:4px; }
+  .rate-col-header { text-align:center; font-size:11px; color:var(--grey-500); }
+  .rate-row-label { font-size:13px; color:var(--grey-700); margin-bottom:4px; font-weight:500; }
+  .btn-save-rates { background:var(--green-dark); color:white; border:none; border-radius:8px; padding:11px 20px; font-size:14px; font-family:inherit; font-weight:600; cursor:pointer; margin-top:8px; width:100%; }
+  .sheet-input-row { display:flex; gap:8px; margin-bottom:6px; }
+  .sheet-input-row input { flex:1; }
+  .btn-sheet { background:var(--green-mid); color:white; border:none; border-radius:8px; padding:11px 14px; font-size:13px; font-family:inherit; cursor:pointer; white-space:nowrap; }
+  .sheet-status { font-size:12px; margin-top:4px; }
+  .sheet-status.ok { color:var(--green-mid); }
+  .sheet-status.err { color:var(--red); }
+
+  /* PS list editor */
+  .ps-list-editor { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+  .ps-list-row { display:flex; gap:8px; align-items:center; }
+  .ps-list-row input { flex:1; }
+  .btn-del { background:var(--red-pale); border:none; border-radius:6px; color:var(--red); padding:8px 10px; cursor:pointer; font-size:14px; }
+  .btn-add-ps { background:var(--green-pale); border:1.5px solid var(--green-light); color:var(--green-dark); border-radius:8px; padding:9px 14px; font-size:13px; font-family:inherit; font-weight:600; cursor:pointer; width:100%; margin-bottom:4px; }
+  .btn-save-ps { background:var(--green-dark); color:white; border:none; border-radius:8px; padding:11px; font-size:14px; font-family:inherit; font-weight:600; cursor:pointer; width:100%; margin-top:6px; }
+</style>
+</head>
+<body>
+
+<!-- ══ PS SELECTION OVERLAY ══ -->
+<div id="psOverlay">
+  <div class="ps-logo">🐐</div>
+  <div class="ps-title">बिक्री शिविर</div>
+  <div class="ps-subtitle">आप कौन हैं? अपना नाम चुनें</div>
+  <div class="ps-options" id="psOptions"></div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="header-left">
+    <div class="header-title">🐐 बिक्री शिविर</div>
+    <div class="header-ps" id="headerPsName">—</div>
+  </div>
+  <div class="header-right">
+    <div class="header-count" id="headerCount">0 पशु</div>
+    <button class="btn-change-ps" onclick="changPS()">बदलें</button>
+  </div>
+</header>
+
+<!-- ══ TABS ══ -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('form')">📝 नया पशु</div>
+  <div class="tab" onclick="switchTab('records')">📋 मेरे रिकॉर्ड</div>
+  <div class="tab" onclick="switchTab('settings')">⚙️ सेटिंग</div>
+</div>
+
+<!-- ══ FORM PAGE ══ -->
+<div class="page active" id="page-form">
+  <div class="card">
+    <div class="card-title">घर की जानकारी</div>
+    <div class="row2">
+      <div class="field">
+        <label>टोकन नंबर<span class="req">*</span></label>
+        <input type="number" id="token" min="1" placeholder="1">
+      </div>
+      <div class="field">
+        <label>HH का नाम<span class="req">*</span></label>
+        <input type="text" id="hhName" placeholder="नाम लिखें">
+      </div>
+    </div>
+    <div class="field">
+      <label>मोबाइल नंबर</label>
+      <input type="tel" id="mobile" placeholder="10 अंकों का नंबर">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">पशु की जानकारी</div>
+    <div class="field">
+      <label>नर / मादा<span class="req">*</span></label>
+      <div class="toggle-group">
+        <button class="toggle-btn" id="btnMale" onclick="selectGender('male')">🐐 नर</button>
+        <button class="toggle-btn" id="btnFemale" onclick="selectGender('female')">🐑 मादा</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>दांत<span class="req">*</span></label>
+        <select id="teeth" onchange="onFieldChange()">
+          <option value="">चुनें</option>
+          <option value="0">0 (दूध के दांत)</option>
+          <option value="2">2 दांत</option>
+          <option value="4">4 दांत</option>
+          <option value="6">6 दांत</option>
+          <option value="8">8 दांत</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>वजन (kg)<span class="req">*</span></label>
+        <input type="number" id="weight" min="1" max="120" placeholder="जैसे 22" oninput="onFieldChange()">
+      </div>
+    </div>
+    <div class="field">
+      <label>क्वालिटी<span class="req">*</span></label>
+      <select id="quality" onchange="onFieldChange()">
+        <option value="">चुनें</option>
+        <option value="first">पहली (1st)</option>
+        <option value="second">दूसरी (2nd)</option>
+        <option value="third">तीसरी (3rd)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>उम्र की श्रेणी</label>
+      <input type="text" id="categoryDisplay" readonly placeholder="दांत और वजन डालने पर अपने आप भरेगा" style="background:#F8F8F8;color:var(--grey-700);">
+    </div>
+  </div>
+
+  <div class="warning-msg" id="warningMsg">⚠️ यह पशु हमारी खरीद श्रेणी में नहीं आता। कृपया The Nudge टीम से संपर्क करें।</div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-row">
+      <span class="result-label">श्रेणी</span>
+      <span class="result-value" id="rCat">—</span>
+    </div>
+    <div class="result-row">
+      <span class="result-label">रेट कार्ड (₹/kg)</span>
+      <span class="result-value" id="rRate">—</span>
+    </div>
+    <hr class="result-divider">
+    <div class="result-row">
+      <span class="result-label">अंतिम मूल्य</span>
+      <span class="result-value big" id="rFinal">₹ —</span>
+    </div>
+  </div>
+
+  <button class="btn-submit" id="btnSubmit" onclick="submitRecord()" disabled>✅ सहेजें और अगला</button>
+  <button class="btn-reset" onclick="resetForm()">🔄 फॉर्म खाली करें</button>
+</div>
+
+<!-- ══ RECORDS PAGE ══ -->
+<div class="page" id="page-records">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>टोकन</th>
+          <th>नाम</th>
+          <th>नर/मादा</th>
+          <th>दांत</th>
+          <th>वजन</th>
+          <th>क्वालिटी</th>
+          <th>रेट</th>
+          <th>अंतिम मूल्य</th>
+        </tr>
+      </thead>
+      <tbody id="recordsBody">
+        <tr><td colspan="8" class="empty-state">अभी कोई रिकॉर्ड नहीं है</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="table-summary" id="tableSummary" style="display:none;">
+    <div class="summary-item"><strong id="sumCount">0</strong>कुल पशु</div>
+    <div class="summary-item"><strong id="sumWeight">0 kg</strong>कुल वजन</div>
+    <div class="summary-item"><strong id="sumPrice">₹0</strong>कुल मूल्य</div>
+  </div>
+  <button class="btn-export" onclick="exportCSV()">⬇️ CSV डाउनलोड करें</button>
+</div>
+
+<!-- ══ SETTINGS PAGE ══ -->
+<div class="page" id="page-settings">
+
+  <div class="card">
+    <div class="card-title">Pashu Sakhi के नाम</div>
+    <div style="font-size:12px;color:var(--grey-500);margin-bottom:10px;">यहाँ PS के नाम डालें — ये नाम login screen पर दिखेंगे।</div>
+    <div class="ps-list-editor" id="psListEditor"></div>
+    <button class="btn-add-ps" onclick="addPsRow()">+ नाम जोड़ें</button>
+    <button class="btn-save-ps" onclick="savePsList()">✅ नाम सहेजें</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Google Sheets कनेक्शन</div>
+    <div class="field">
+      <label>Script URL</label>
+      <div class="sheet-input-row">
+        <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/...">
+        <button class="btn-sheet" onclick="saveScriptUrl()">सहेजें</button>
+      </div>
+      <div class="sheet-status" id="sheetStatus"></div>
+    </div>
+    <details style="margin-top:8px;">
+      <summary style="font-size:12px;color:var(--green-mid);cursor:pointer;font-weight:600;">Apps Script कोड देखें 👁️</summary>
+      <pre id="appsScriptCode" style="background:#F5F5F5;border-radius:8px;padding:12px;font-size:10px;overflow-x:auto;margin-top:8px;line-height:1.6;white-space:pre-wrap;"></pre>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="card-title">रेट कार्ड बदलें (₹/kg)</div>
+    <div style="font-size:12px;color:var(--amber);background:var(--amber-pale);border-radius:6px;padding:8px 10px;margin-bottom:12px;">⚠️ रेट कार्ड केवल शिविर शुरू होने से पहले बदलें।</div>
+
+    <div class="settings-label">नर — युवा (0–2 दांत)</div>
+    <div class="rate-col-headers"><div class="rate-col-header">1st</div><div class="rate-col-header">2nd</div><div class="rate-col-header">3rd</div></div>
+    <div class="rate-row-label">छोटा (&lt;17 kg)</div>
+    <div class="rate-grid"><input type="number" id="r_m_small_1" value="340"><input type="number" id="r_m_small_2" value="325"><input type="number" id="r_m_small_3" value="320"></div>
+    <div class="rate-row-label">सामान्य (17–26 kg)</div>
+    <div class="rate-grid"><input type="number" id="r_m_reg_1" value="380"><input type="number" id="r_m_reg_2" value="355"><input type="number" id="r_m_reg_3" value="345"></div>
+    <div class="rate-row-label">बड़ा/Body (&gt;26 kg)</div>
+    <div class="rate-grid"><input type="number" id="r_m_body_1" value="405"><input type="number" id="r_m_body_2" value="385"><input type="number" id="r_m_body_3" value="385"></div>
+
+    <div style="border-top:1px solid var(--grey-100);margin:14px 0;"></div>
+    <div class="settings-label">पुरानी मादा (6–8 दांत)</div>
+    <div class="rate-col-headers"><div class="rate-col-header">1st</div><div class="rate-col-header">2nd</div><div class="rate-col-header">3rd</div></div>
+    <div class="rate-row-label">सभी वजन</div>
+    <div class="rate-grid"><input type="number" id="r_f_1" value="265"><input type="number" id="r_f_2" value="235"><input type="number" id="r_f_3" value="215"></div>
+    <button class="btn-save-rates" onclick="saveRates()">✅ रेट कार्ड सहेजें</button>
+  </div>
+</div>
+
+<div class="success-toast" id="toast"></div>
+
+<script>
+// ══ STATE ══
+const BUFFER = 0.92;
+let gender = null;
+let currentPS = localStorage.getItem('sc_currentPS') || null;
+let psList = JSON.parse(localStorage.getItem('sc_psList') || '["PS1","PS2","PS3","PS4"]');
+let allRecords = JSON.parse(localStorage.getItem('sc_allRecords') || '{}');
+let rates = JSON.parse(localStorage.getItem('sc_rates') || 'null') || { m_small:[340,325,320], m_reg:[380,355,345], m_body:[405,385,385], f:[265,235,215] };
+let scriptUrl = localStorage.getItem('sc_script') || '';
+
+// ══ INIT ══
+window.onload = () => {
+  renderPsOverlay();
+  if (currentPS) showApp();
+  loadRatesIntoInputs();
+  renderPsListEditor();
+  if (scriptUrl) document.getElementById('scriptUrl').value = scriptUrl;
+  document.getElementById('appsScriptCode').textContent = getAppsScriptCode();
+};
+
+// ══ PS OVERLAY ══
+function renderPsOverlay() {
+  const icons = ['🌸','🌻','🌼','🌺','🌷','🍀'];
+  document.getElementById('psOptions').innerHTML = psList.map((name, i) => `
+    <button class="ps-option" onclick="selectPS('${name}')">
+      <span class="ps-icon">${icons[i % icons.length]}</span>
+      <span>${name}</span>
+    </button>
+  `).join('');
+}
+
+function selectPS(name) {
+  currentPS = name;
+  localStorage.setItem('sc_currentPS', name);
+  showApp();
+}
+
+function showApp() {
+  document.getElementById('psOverlay').classList.add('hidden');
+  document.getElementById('headerPsName').textContent = '👤 ' + currentPS;
+  updateHeaderCount();
+  nextToken();
+}
+
+function changPS() {
+  currentPS = null;
+  localStorage.removeItem('sc_currentPS');
+  document.getElementById('psOverlay').classList.remove('hidden');
+  renderPsOverlay();
+}
+
+// ══ TABS ══
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['form','records','settings'][i]===tab));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  if (tab==='records') renderRecords();
+  if (tab==='settings') { loadRatesIntoInputs(); renderPsListEditor(); }
+}
+
+// ══ GENDER ══
+function selectGender(g) {
+  gender = g;
+  document.getElementById('btnMale').className = 'toggle-btn'+(g==='male'?' sel-male':'');
+  document.getElementById('btnFemale').className = 'toggle-btn'+(g==='female'?' sel-female':'');
+  onFieldChange();
+}
+
+// ══ RATE LOGIC ══
+function getCategory(g, teeth, weight) {
+  const t=parseInt(teeth), w=parseFloat(weight);
+  if (g==='male') {
+    if (t===0||t===2) {
+      if (w<17)  return {key:'m_small', label:'नर — छोटा (<17 kg)'};
+      if (w<=26) return {key:'m_reg',   label:'नर — सामान्य (17–26 kg)'};
+      return          {key:'m_body',  label:'नर — बड़ा/Body (>26 kg)'};
+    }
+    return null;
+  }
+  if (g==='female') {
+    if (t===6||t===8) {
+      if (w<=40) return {key:'f', label:'पुरानी मादा (6–8 दांत)'};
+      return null;
+    }
+    return null;
+  }
+  return null;
+}
+
+function getRate(catKey, quality) {
+  const idx = quality==='first'?0:quality==='second'?1:2;
+  return rates[catKey][idx];
+}
+
+function onFieldChange() {
+  const teeth=document.getElementById('teeth').value;
+  const weight=document.getElementById('weight').value;
+  const quality=document.getElementById('quality').value;
+  const warn=document.getElementById('warningMsg');
+  const result=document.getElementById('resultCard');
+  document.getElementById('categoryDisplay').value='';
+  document.getElementById('btnSubmit').disabled=true;
+  warn.classList.remove('show'); result.classList.remove('show');
+  if (!gender||!teeth||!weight||!quality) return;
+  const cat=getCategory(gender,teeth,weight);
+  if (!cat) { warn.classList.add('show'); return; }
+  document.getElementById('categoryDisplay').value=cat.label;
+  const rate=getRate(cat.key,quality);
+  const finalPrice=Math.round(parseFloat(weight)*rate*BUFFER);
+  document.getElementById('rCat').textContent=cat.label;
+  document.getElementById('rRate').textContent='₹ '+rate;
+  document.getElementById('rFinal').textContent='₹ '+finalPrice.toLocaleString('hi-IN');
+  result.classList.add('show');
+  document.getElementById('btnSubmit').disabled=false;
+}
+
+// ══ SUBMIT ══
+async function submitRecord() {
+  const token=document.getElementById('token').value;
+  const hhName=document.getElementById('hhName').value.trim();
+  const mobile=document.getElementById('mobile').value.trim();
+  const teeth=document.getElementById('teeth').value;
+  const weight=document.getElementById('weight').value;
+  const quality=document.getElementById('quality').value;
+  if (!token||!hhName||!gender||!teeth||!weight||!quality) { showToast('⚠️ सभी जरूरी खाने भरें',false); return; }
+  const cat=getCategory(gender,teeth,weight);
+  if (!cat) return;
+  const rate=getRate(cat.key,quality);
+  const finalPrice=Math.round(parseFloat(weight)*rate*BUFFER);
+  const qMap={first:'पहली',second:'दूसरी',third:'तीसरी'};
+  const gMap={male:'नर',female:'मादा'};
+  const record={
+    timestamp:new Date().toLocaleString('hi-IN'),
+    psName:currentPS, token:parseInt(token),
+    hhName, mobile, gender:gMap[gender],
+    category:cat.label, quality:qMap[quality],
+    teeth, weight:parseFloat(weight), rateCard:rate, finalPrice
+  };
+  if (!allRecords[currentPS]) allRecords[currentPS]=[];
+  allRecords[currentPS].push(record);
+  localStorage.setItem('sc_allRecords', JSON.stringify(allRecords));
+  updateHeaderCount();
+  if (scriptUrl) {
+    try {
+      await fetch(scriptUrl, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(record) });
+    } catch(e) { console.warn('Sheets sync failed',e); }
+  }
+  showToast('✅ रिकॉर्ड सहेज लिया गया!', true);
+  resetForm();
+}
+
+// ══ RECORDS ══
+function renderRecords() {
+  if (!currentPS) return;
+  const myRecords = (allRecords[currentPS]||[]);
+  const tbody=document.getElementById('recordsBody');
+  const summary=document.getElementById('tableSummary');
+  if (!myRecords.length) {
+    tbody.innerHTML='<tr><td colspan="8" class="empty-state">अभी कोई रिकॉर्ड नहीं है</td></tr>';
+    summary.style.display='none'; return;
+  }
+  tbody.innerHTML=myRecords.map(r=>`
+    <tr>
+      <td><strong>${r.token}</strong></td>
+      <td>${r.hhName}</td>
+      <td><span class="badge ${r.gender==='नर'?'badge-male':'badge-female'}">${r.gender}</span></td>
+      <td>${r.teeth}</td>
+      <td>${r.weight} kg</td>
+      <td>${r.quality}</td>
+      <td>₹${r.rateCard}</td>
+      <td class="price-cell">₹${parseInt(r.finalPrice).toLocaleString('hi-IN')}</td>
+    </tr>`).join('');
+  const tw=myRecords.reduce((s,r)=>s+r.weight,0);
+  const tp=myRecords.reduce((s,r)=>s+r.finalPrice,0);
+  document.getElementById('sumCount').textContent=myRecords.length;
+  document.getElementById('sumWeight').textContent=tw.toFixed(1)+' kg';
+  document.getElementById('sumPrice').textContent='₹'+tp.toLocaleString('hi-IN');
+  summary.style.display='flex';
+}
+
+function updateHeaderCount() {
+  if (!currentPS) return;
+  const c=(allRecords[currentPS]||[]).length;
+  document.getElementById('headerCount').textContent=c+' पशु';
+}
+
+function exportCSV() {
+  const myRecords=allRecords[currentPS]||[];
+  if (!myRecords.length) return;
+  const headers=['Timestamp','PS Name','Token','HH Name','Mobile','Gender','Category','Quality','Teeth','Weight','Rate Card','Final Price'];
+  const rows=myRecords.map(r=>[r.timestamp,r.psName,r.token,r.hhName,r.mobile,r.gender,r.category,r.quality,r.teeth,r.weight,r.rateCard,r.finalPrice]);
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='sale_camp_'+currentPS.replace(/ /g,'_')+'_'+new Date().toLocaleDateString('en-IN').replace(/\//g,'-')+'.csv';
+  a.click();
+}
+
+// ══ SETTINGS ══
+function renderPsListEditor() {
+  document.getElementById('psListEditor').innerHTML = psList.map((name,i)=>`
+    <div class="ps-list-row">
+      <input type="text" value="${name}" id="ps_name_${i}" placeholder="PS का नाम">
+      <button class="btn-del" onclick="deletePsRow(${i})">✕</button>
+    </div>`).join('');
+}
+
+function addPsRow() {
+  psList.push('');
+  renderPsListEditor();
+}
+
+function deletePsRow(i) {
+  psList.splice(i,1);
+  renderPsListEditor();
+}
+
+function savePsList() {
+  psList = psList.map((_,i)=>document.getElementById('ps_name_'+i)?.value.trim()).filter(Boolean);
+  // re-read from inputs
+  const inputs = document.querySelectorAll('#psListEditor input');
+  psList = Array.from(inputs).map(el=>el.value.trim()).filter(Boolean);
+  localStorage.setItem('sc_psList', JSON.stringify(psList));
+  renderPsOverlay();
+  showToast('✅ नाम सहेज लिए गए', true);
+}
+
+function loadRatesIntoInputs() {
+  document.getElementById('r_m_small_1').value=rates.m_small[0];
+  document.getElementById('r_m_small_2').value=rates.m_small[1];
+  document.getElementById('r_m_small_3').value=rates.m_small[2];
+  document.getElementById('r_m_reg_1').value=rates.m_reg[0];
+  document.getElementById('r_m_reg_2').value=rates.m_reg[1];
+  document.getElementById('r_m_reg_3').value=rates.m_reg[2];
+  document.getElementById('r_m_body_1').value=rates.m_body[0];
+  document.getElementById('r_m_body_2').value=rates.m_body[1];
+  document.getElementById('r_m_body_3').value=rates.m_body[2];
+  document.getElementById('r_f_1').value=rates.f[0];
+  document.getElementById('r_f_2').value=rates.f[1];
+  document.getElementById('r_f_3').value=rates.f[2];
+}
+
+function saveRates() {
+  rates={
+    m_small:[+document.getElementById('r_m_small_1').value,+document.getElementById('r_m_small_2').value,+document.getElementById('r_m_small_3').value],
+    m_reg:[+document.getElementById('r_m_reg_1').value,+document.getElementById('r_m_reg_2').value,+document.getElementById('r_m_reg_3').value],
+    m_body:[+document.getElementById('r_m_body_1').value,+document.getElementById('r_m_body_2').value,+document.getElementById('r_m_body_3').value],
+    f:[+document.getElementById('r_f_1').value,+document.getElementById('r_f_2').value,+document.getElementById('r_f_3').value]
+  };
+  localStorage.setItem('sc_rates',JSON.stringify(rates));
+  showToast('✅ रेट कार्ड सहेज लिया',true);
+}
+
+function saveScriptUrl() {
+  scriptUrl=document.getElementById('scriptUrl').value.trim();
+  localStorage.setItem('sc_script',scriptUrl);
+  const el=document.getElementById('sheetStatus');
+  el.className='sheet-status '+(scriptUrl?'ok':'err');
+  el.textContent=scriptUrl?'✅ URL सहेज लिया गया। अब हर सबमिट Google Sheet में जाएगा।':'URL हटा दिया गया।';
+}
+
+function nextToken() {
+  if (!currentPS) return;
+  const my=allRecords[currentPS]||[];
+  document.getElementById('token').value=my.length>0?Math.max(...my.map(r=>r.token))+1:1;
+}
+
+function resetForm() {
+  gender=null;
+  document.getElementById('btnMale').className='toggle-btn';
+  document.getElementById('btnFemale').className='toggle-btn';
+  document.getElementById('hhName').value='';
+  document.getElementById('mobile').value='';
+  document.getElementById('teeth').value='';
+  document.getElementById('weight').value='';
+  document.getElementById('quality').value='';
+  document.getElementById('categoryDisplay').value='';
+  document.getElementById('resultCard').classList.remove('show');
+  document.getElementById('warningMsg').classList.remove('show');
+  document.getElementById('btnSubmit').disabled=true;
+  nextToken();
+}
+
+function showToast(msg,ok=true) {
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=ok?'var(--green-dark)':'var(--amber)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function getAppsScriptCode() {
+  return `function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const data = JSON.parse(e.postData.contents);
+  const psName = data.psName || "Unknown";
+
+  // Get or create a sheet tab for this PS
+  let sheet = ss.getSheetByName(psName);
+  if (!sheet) {
+    sheet = ss.insertSheet(psName);
+    sheet.appendRow([
+      "Timestamp","PS Name","Token","HH Name","Mobile",
+      "Gender","Category","Quality","Teeth","Weight",
+      "Rate Card","Final Price"
+    ]);
+    sheet.getRange(1,1,1,12).setFontWeight("bold")
+         .setBackground("#1A4D3A").setFontColor("white");
+  }
+
+  sheet.appendRow([
+    data.timestamp, data.psName, data.token, data.hhName,
+    data.mobile, data.gender, data.category, data.quality,
+    data.teeth, data.weight, data.rateCard, data.finalPrice
+  ]);
+
+  return ContentService
+    .createTextOutput(JSON.stringify({status:"ok"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({status:"ready"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+}
+</script>
+</body>
+</html>
