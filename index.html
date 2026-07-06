@@ -338,9 +338,9 @@
    CONFIG — fill these in after creating your Supabase project
    Settings > API in your Supabase dashboard
    ═══════════════════════════════════════════════════════════ */
-const SUPABASE_URL = "https://qiggtdqsxwssieznuuwq.supabase.co/rest/v1/";
+const SUPABASE_URL = "https://qiggtdqsxwssieznuuwq.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpZ2d0ZHFzeHdzc2llem51dXdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzNDg3MDcsImV4cCI6MjA5ODkyNDcwN30.d3205FMU7nuel1_eANgvj4bYRAH5iTKJ4CopMvMo-r4";
-const FALLBACK_REGIONS = ["Jasaura", "Sarwankhera"];
+const FALLBACK_REGIONS = ["Sojat", "Pali"];
 const HISTORY_DAYS = 15;
 
 const sb = (SUPABASE_URL.startsWith("http")) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
